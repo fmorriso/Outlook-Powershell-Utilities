@@ -276,4 +276,4 @@ if (Test-Path $outFile) {
 
 $global:Html -join "`n" | Set-Content -Path $outFile -Encoding UTF8
 
-Start-Process $outFile
+Start-Process -FilePath $outFile
