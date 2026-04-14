@@ -5,6 +5,8 @@ shifted from full-functionality Outlook Desktop to the Outlook "app" and Outlook
 
 1. show all unread email in a nice display, regardless of how deeply nested (e.g., Filed > Companies > Oracle) the unread email may sit within (perhaps due to Rules routing).
 
+1. remove old emails from the Outlook Junk folder based on a configurable number of days old.
+
 ## Tools Used
 
 | Tool       | Version |
