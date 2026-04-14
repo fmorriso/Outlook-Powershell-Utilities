@@ -107,11 +107,20 @@ Connect-MgGraph -Scopes 'Mail.Read','Mail.Read.Shared','User.Read' -NoWelcome -V
 Get-MgContext | Out-Null
 
 # -----------------------------
-# Resolve all root folders
+# PAGE THROUGH ALL ROOT FOLDERS
 # -----------------------------
-Write-Verbose "Resolving root folders..."
+Write-Verbose "Resolving ALL root folders (paged)..."
 
-$folderList = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=200"
+$folderList = @()
+$next = "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=999"
+
+while ($next) {
+    $resp = Invoke-MgGraphRequest -Method GET -Uri $next
+    $folderList += $resp.value
+    $next = $resp.'@odata.nextLink'
+}
+
+Write-Verbose "Total root-level folders retrieved: $($folderList.Count)"
 
 # -----------------------------
 # FUNCTION: Show unread messages
@@ -200,6 +209,36 @@ function Show-UnreadMessagesFromFolder {
 }
 
 # -----------------------------
+# FUNCTION: Get all child folders for a parent (paged)
+# -----------------------------
+function Get-ChildFoldersPaged {
+    param(
+        [string]$ParentFolderId
+    )
+
+    $allChildren = @()
+    $childUri = "https://graph.microsoft.com/v1.0/me/mailFolders/$ParentFolderId/childFolders?`$top=200"
+
+    while ($childUri) {
+        try {
+            $childResponse = Invoke-MgGraphRequest -Method GET -Uri $childUri
+        }
+        catch {
+            Write-Warning "Failed to get child folders for '$ParentFolderId': $($_.Exception.Message)"
+            break
+        }
+
+        if ($childResponse.value) {
+            $allChildren += $childResponse.value
+        }
+
+        $childUri = $childResponse.'@odata.nextLink'
+    }
+
+    return $allChildren
+}
+
+# -----------------------------
 # FUNCTION: Recursively walk folders (with breadcrumb path)
 # -----------------------------
 function Get-FolderRecursively {
@@ -211,18 +250,9 @@ function Get-FolderRecursively {
 
     Show-UnreadMessagesFromFolder -FolderId $FolderId -FolderDisplayName $BreadcrumbPath
 
-    $childUri = "https://graph.microsoft.com/v1.0/me/mailFolders/$FolderId/childFolders?`$top=200"
+    $children = Get-ChildFoldersPaged -ParentFolderId $FolderId
 
-    try {
-        $childResponse = Invoke-MgGraphRequest -Method GET -Uri $childUri
-    }
-    catch {
-        Write-Warning "Failed to get child folders for '$FolderDisplayName': $($_.Exception.Message)"
-        return
-    }
-
-    foreach ($child in $childResponse.value) {
-
+    foreach ($child in $children) {
         $childPath = "$BreadcrumbPath → $($child.displayName)"
 
         Get-FolderRecursively `
@@ -237,7 +267,7 @@ function Get-FolderRecursively {
 # -----------------------------
 foreach ($rootName in $rootFolderNames) {
 
-    $rootFolder = $folderList.value | Where-Object { $_.displayName -eq $rootName }
+    $rootFolder = $folderList | Where-Object { $_.displayName -eq $rootName }
 
     if (-not $rootFolder) {
         Write-Warning "Folder '$rootName' not found — skipping."
