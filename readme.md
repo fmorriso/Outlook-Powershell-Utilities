@@ -57,13 +57,9 @@ arrived (briefly, in some cases) in the ***InBox*** before being routed by ***Ru
 
 This script relies on several Microsoft Graph PowerShell SDK commands:
 
-- [`Connect-MgGraph`][connect] — establishes authentication with Microsoft Graph  
-- [`Disconnect-MgGraph`][disconnect] — closes the Graph session  
-- [`Invoke-MgGraphRequest`][invoke] — used for GET and DELETE operations  
-- [`Microsoft.Graph`][mod-core] and [`Microsoft.Graph.Mail`][mod-mail] modules
+- [`Connect-MgGraph`] connect — establishes authentication with Microsoft Graph  (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/connect-mggraph)
+- [`Disconnect-MgGraph`] disconnect — closes the Graph session (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/disconnect-mggraph)
+- [`Invoke-MgGraphRequest`]invoke — used for GET and DELETE operations (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/invoke-mggraphrequest)
+- [`Microsoft.Graph`] required module (https://learn.microsoft.com/powershell/microsoftgraph/overview)
+- [`Microsoft.Graph.Mail`] required module (https://learn.microsoft.com/powershell/module/microsoft.graph.mail)
 
-[connect]: https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/connect-mggraph
-[disconnect]: https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/disconnect-mggraph
-[invoke]: https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/invoke-mggraphrequest
-[mod-core]: https://learn.microsoft.com/powershell/microsoftgraph/overview
-[mod-mail]: https://learn.microsoft.com/powershell/module/microsoft.graph.mail
