@@ -55,11 +55,10 @@ arrived (briefly, in some cases) in the ***InBox*** before being routed by ***Ru
 
 ### Microsoft Graph Commands Used
 
-This script relies on several Microsoft Graph PowerShell SDK commands:
+These scripts rely on several Microsoft Graph PowerShell SDK commands:
 
 - [`Connect-MgGraph`] connect — establishes authentication with Microsoft Graph  (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/connect-mggraph)
 - [`Disconnect-MgGraph`] disconnect — closes the Graph session (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/disconnect-mggraph)
 - [`Invoke-MgGraphRequest`]invoke — used for GET and DELETE operations (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/invoke-mggraphrequest)
 - [`Microsoft.Graph`] required module (https://learn.microsoft.com/powershell/microsoftgraph/overview)
 - [`Microsoft.Graph.Mail`] required module (https://learn.microsoft.com/powershell/module/microsoft.graph.mail)
-
