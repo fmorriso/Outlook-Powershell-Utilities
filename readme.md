@@ -31,8 +31,8 @@ built-in folders except where necessary to convey my specific preferences:
     * (many subfolders but no addtional subfolder levels)
 
 Reasons for the above structure are:
-1. keep the top-level folder structure as simple as possible.
-1. Use Rules to route emails to folders underneath ***Filed*** as much as possible.
+1. keep the top-level folder structure as ***simple*** as possible.
+1. Use *Rules* to route emails to folders underneath ***Filed*** as much as possible.
 1. Use ***Filed*** as a way to show which folders contain emails that originally
 arrived (briefly, in some cases) in the ***InBox*** before being routed by ***Rules*** to somewhere else.
 1. Keep even the ***Filed*** folder as shallow as possible, no more than three levels deep.
