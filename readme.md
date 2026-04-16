@@ -9,33 +9,37 @@ shifted from full-functionality Outlook Desktop to the Outlook "app" and Outlook
 1. remove old emails from the Outlook Junk folder based on a configurable number of days old.
 
 1. remove old emails from the Outlook InBox folder based on a configurable
-number of days old.
+   number of days old.
+
+1. remove old emails from the Outlook Deleted folder based on a configurable
+   number of days old.
 
 ## Developer Notes
 
 My Outlook folder structure is as follows, skipping many of the standard,
 built-in folders except where necessary to convey my specific preferences:
 
-* Inbox
-* Junk Email
-* ... the usual built-in folders
-* Filed
-  * aaSpamByRule
-  * Companies
-    * (many subfolders but no addtional subfolder levels)
-  * Government
-    * (many subfolders but no addtional subfolder levels)
-  * Organizations
-    * (many subfolders but no addtional subfolder levels)
-  * People
-    * (many subfolders but no addtional subfolder levels)
+- Inbox
+- Junk Email
+- ... the usual built-in folders
+- Filed
+  - aaSpamByRule
+  - Companies
+    - (many subfolders but no addtional subfolder levels)
+  - Government
+    - (many subfolders but no addtional subfolder levels)
+  - Organizations
+    - (many subfolders but no addtional subfolder levels)
+  - People
+    - (many subfolders but no addtional subfolder levels)
 
 Reasons for the above structure are:
-1. keep the top-level folder structure as ***simple*** as possible.
-1. Use *Rules* to route emails to folders underneath ***Filed*** as much as possible.
-1. Use ***Filed*** as a way to show which folders contain emails that originally
-arrived (briefly, in some cases) in the ***InBox*** before being routed by ***Rules*** to somewhere else.
-1. Keep even the ***Filed*** folder as shallow as possible, no more than three levels deep.
+
+1. keep the top-level folder structure as **_simple_** as possible.
+1. Use _Rules_ to route emails to folders underneath **_Filed_** as much as possible.
+1. Use **_Filed_** as a way to show which folders contain emails that originally
+   arrived (briefly, in some cases) in the **_InBox_** before being routed by **_Rules_** to somewhere else.
+1. Keep even the **_Filed_** folder as shallow as possible, no more than three levels deep.
 
 ## Tools Used
 
@@ -46,10 +50,11 @@ arrived (briefly, in some cases) in the ***InBox*** before being routed by ***Ru
 
 ## Change History
 
-| Date       | Description                       |
-| :--------- | :-------------------------------- |
-| 2026-04-15 | Add remove old InBox items script |
-| 2026-04-14 | Initial creation                  |
+| Date       | Description                         |
+| :--------- | :---------------------------------- |
+| 2026-04-16 | Add remove old Deleted items script |
+| 2026-04-15 | Add remove old InBox items script   |
+| 2026-04-14 | Initial creation                    |
 
 ## References
 
@@ -57,7 +62,7 @@ arrived (briefly, in some cases) in the ***InBox*** before being routed by ***Ru
 
 These scripts rely on several Microsoft Graph PowerShell SDK commands:
 
-- [`Connect-MgGraph`] connect — establishes authentication with Microsoft Graph  (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/connect-mggraph)
+- [`Connect-MgGraph`] connect — establishes authentication with Microsoft Graph (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/connect-mggraph)
 - [`Disconnect-MgGraph`] disconnect — closes the Graph session (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/disconnect-mggraph)
 - [`Invoke-MgGraphRequest`]invoke — used for GET and DELETE operations (https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/invoke-mggraphrequest)
 - [`Microsoft.Graph`] required module (https://learn.microsoft.com/powershell/microsoftgraph/overview)
