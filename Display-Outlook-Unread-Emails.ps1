@@ -109,7 +109,7 @@ Get-MgContext | Out-Null
 # -----------------------------
 # PAGE THROUGH ALL ROOT FOLDERS
 # -----------------------------
-Write-Verbose "Resolving ALL root folders (paged)..."
+Write-Verbose -Message "Resolving ALL root folders (paged)..."
 
 $folderList = @()
 $next = "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=999"
@@ -120,7 +120,7 @@ while ($next) {
     $next = $resp.'@odata.nextLink'
 }
 
-Write-Verbose "Total root-level folders retrieved: $($folderList.Count)"
+Write-Verbose -Message "Total root-level folders retrieved: $($folderList.Count)"
 
 # -----------------------------
 # FUNCTION: Show unread messages
@@ -131,7 +131,7 @@ function Show-UnreadMessagesFromFolder {
         [string]$FolderDisplayName   # full breadcrumb path
     )
 
-    Write-Verbose "Checking unread messages in: $FolderDisplayName"
+    Write-Verbose -Message "Checking unread messages in: $FolderDisplayName"
 
     $uri =
         "https://graph.microsoft.com/v1.0/me/mailFolders/$FolderId/messages?" +
@@ -144,7 +144,7 @@ function Show-UnreadMessagesFromFolder {
         $response = Invoke-MgGraphRequest -Method GET -Uri $uri
     }
     catch {
-        Write-Warning "Failed to query unread messages in '$FolderDisplayName': $($_.Exception.Message)"
+        Write-Warning -Message "Failed to query unread messages in '$FolderDisplayName': $($_.Exception.Message)"
         return
     }
 
@@ -224,7 +224,7 @@ function Get-ChildFoldersPaged {
             $childResponse = Invoke-MgGraphRequest -Method GET -Uri $childUri
         }
         catch {
-            Write-Warning "Failed to get child folders for '$ParentFolderId': $($_.Exception.Message)"
+            Write-Warning -Message "Failed to get child folders for '$ParentFolderId': $($_.Exception.Message)"
             break
         }
 
@@ -270,11 +270,11 @@ foreach ($rootName in $rootFolderNames) {
     $rootFolder = $folderList | Where-Object { $_.displayName -eq $rootName }
 
     if (-not $rootFolder) {
-        Write-Warning "Folder '$rootName' not found — skipping."
+        Write-Warning -Message "Folder '$rootName' not found — skipping."
         continue
     }
 
-    Write-Verbose "Resolved '$rootName' → ID: $($rootFolder.id)"
+    Write-Verbose -Message "Resolved '$rootName' → ID: $($rootFolder.id)"
 
     Get-FolderRecursively `
         -FolderId $rootFolder.id `
@@ -282,16 +282,16 @@ foreach ($rootName in $rootFolderNames) {
         -BreadcrumbPath $rootFolder.displayName
 }
 
-Write-Verbose "Unread message scan complete."
+Write-Verbose -Message "Unread message scan complete."
 
 # Restore verbose preference
 $VerbosePreference = $vpref
 
 $endDateTime = Get-Date
-Write-Verbose "Ended at: $($endDateTime.ToString($dateFormat))"
+Write-Verbose -Message "Ended at: $($endDateTime.ToString($dateFormat))"
 
 $elapsed = $endDateTime - $startDateTime
-Write-Verbose ("Elapsed time: {0:hh\:mm\:ss}" -f $elapsed)
+Write-Verbose -Message ("Elapsed time: {0:hh\:mm\:ss}" -f $elapsed)
 
 # -----------------------------
 # WRITE HTML FILE
@@ -300,8 +300,8 @@ $global:Html += "</body></html>"
 
 $outFile = Join-Path $PSScriptRoot "UnreadMessages.html"
 
-if (Test-Path $outFile) {
-    Remove-Item $outFile -Force
+if (Test-Path -Path $outFile) {
+    Remove-Item -Path $outFile -Force
 }
 
 $global:Html -join "`n" | Set-Content -Path $outFile -Encoding UTF8
