@@ -14,6 +14,12 @@ shifted from full-functionality Outlook Desktop to the Outlook "app" and Outlook
 1. remove old emails from the Outlook Deleted folder based on a configurable
    number of days old.
 
+1. remove old emails from the Outlook Sent folder based on a configurable
+number of days old.
+
+1. remove old emails from the Filed folder and subfolders based on a configurable
+number of days old.
+
 ## Developer Notes
 
 My Outlook folder structure is as follows, skipping many of the standard,
