@@ -48,13 +48,13 @@ Reasons for the above structure are:
 | Powershell |   7.6.0 |
 | VSCode     | 1.116.0 |
 
-## Change History
+# Change History
 
-| Date       | Description                         |
-| :--------- | :---------------------------------- |
-| 2026-04-16 | Add remove old Deleted items script |
-| 2026-04-15 | Add remove old InBox items script   |
-| 2026-04-14 | Initial creation                    |
+| Date       | Description                                          |
+| :--------- | :--------------------------------------------------- |
+| 2026-04-16 | Add remove old Deleted, Filed and Sent items scripts |
+| 2026-04-15 | Add remove old InBox items script                    |
+| 2026-04-14 | Initial creation                                     |
 
 ## References
 
