@@ -10,7 +10,8 @@ Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
 # CONFIGURATION
 # -----------------------------
 $rootFolderName = "Filed"       # <--- Start here
-$daysOld = [int](((365*3 + 366) / 4) * 1.5)
+$yearsOld = 1.5                 # 1.5 is the number of years old, accounting for (most) leap years.
+$daysOld = [int](((365*3 + 366) / 4.0) * $yearsOld) 
 $batchSize      = 100
 # -----------------------------
 
