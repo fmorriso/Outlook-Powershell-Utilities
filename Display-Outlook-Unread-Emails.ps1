@@ -17,9 +17,9 @@ $batchSize      = 100
 # -----------------------------
 # HTML BUFFER + COLLAPSIBLE UI
 # -----------------------------
-$global:Html = @()
-$global:Html += "<html><head><meta charset='UTF-8'>"
-$global:Html += "<style>
+$Html = @()
+$Html += "<html><head><meta charset='UTF-8'>"
+$Html += "<style>
 body {
     font-family: Arial, sans-serif;
     font-size: 1rem;
@@ -128,7 +128,8 @@ Write-Verbose -Message "Total root-level folders retrieved: $($folderList.Count)
 function Show-UnreadMessagesFromFolder {
     param(
         [string]$FolderId,
-        [string]$FolderDisplayName   # full breadcrumb path
+        [string]$FolderDisplayName,
+        [ref]$Html
     )
 
     Write-Verbose -Message "Checking unread messages in: $FolderDisplayName"
@@ -161,12 +162,12 @@ function Show-UnreadMessagesFromFolder {
 
     # Collapsible section
     $safeFolder = [System.Web.HttpUtility]::HtmlEncode($FolderDisplayName)
-    $global:Html += "<button class='collapsible'>$safeFolder</button>"
-    $global:Html += "<div class='content'>"
+    $Html.Value += "<button class='collapsible'>$safeFolder</button>"
+    $Html.Value += "<div class='content'>"
 
     # Table start
-    $global:Html += "<table>"
-    $global:Html += "<tr><th>Received</th><th>From</th><th>Subject</th><th>Open</th></tr>"
+    $Html.Value += "<table>"
+    $Html.Value += "<tr><th>Received</th><th>From</th><th>Subject</th><th>Open</th></tr>"
 
     foreach ($msg in $messages) {
 
@@ -196,20 +197,20 @@ function Show-UnreadMessagesFromFolder {
         Write-Host ""
 
         # HTML row
-        $global:Html += "<tr>"
-        $global:Html += "<td>$safeDate</td>"
-        $global:Html += "<td>$safeFrom</td>"
-        $global:Html += "<td>$safeSubject</td>"
-        $global:Html += "<td><a href='$webLink' target='_blank' rel='noopener noreferrer'>Open</a></td>"
-        $global:Html += "</tr>"
+        $Html.Value += "<tr>"
+        $Html.Value += "<td>$safeDate</td>"
+        $Html.Value += "<td>$safeFrom</td>"
+        $Html.Value += "<td>$safeSubject</td>"
+        $Html.Value += "<td><a href='$webLink' target='_blank' rel='noopener noreferrer'>Open</a></td>"
+        $Html.Value += "</tr>"
     }
 
     # Close table + collapsible content
-    $global:Html += "</table></div>"
+    $Html.Value += "</table></div>"
 }
 
 # -----------------------------
-# FUNCTION: Get all child folders for a parent (paged)
+# FUNCTION: Get all child folders
 # -----------------------------
 function Get-ChildFoldersPaged {
     param(
@@ -239,16 +240,17 @@ function Get-ChildFoldersPaged {
 }
 
 # -----------------------------
-# FUNCTION: Recursively walk folders (with breadcrumb path)
+# FUNCTION: Recursively walk folders
 # -----------------------------
 function Get-FolderRecursively {
     param(
         [string]$FolderId,
         [string]$FolderDisplayName,
-        [string]$BreadcrumbPath
+        [string]$BreadcrumbPath,
+        [ref]$Html
     )
 
-    Show-UnreadMessagesFromFolder -FolderId $FolderId -FolderDisplayName $BreadcrumbPath
+    Show-UnreadMessagesFromFolder -FolderId $FolderId -FolderDisplayName $BreadcrumbPath -Html $Html
 
     $children = Get-ChildFoldersPaged -ParentFolderId $FolderId
 
@@ -258,7 +260,8 @@ function Get-FolderRecursively {
         Get-FolderRecursively `
             -FolderId $child.id `
             -FolderDisplayName $child.displayName `
-            -BreadcrumbPath $childPath
+            -BreadcrumbPath $childPath `
+            -Html $Html
     }
 }
 
@@ -279,7 +282,8 @@ foreach ($rootName in $rootFolderNames) {
     Get-FolderRecursively `
         -FolderId $rootFolder.id `
         -FolderDisplayName $rootFolder.displayName `
-        -BreadcrumbPath $rootFolder.displayName
+        -BreadcrumbPath $rootFolder.displayName `
+        -Html ([ref]$Html)
 }
 
 Write-Verbose -Message "Unread message scan complete."
@@ -296,14 +300,14 @@ Write-Verbose -Message ("Elapsed time: {0:hh\:mm\:ss}" -f $elapsed)
 # -----------------------------
 # WRITE HTML FILE
 # -----------------------------
-$global:Html += "</body></html>"
+$Html += "</body></html>"
 
-$outFile = Join-Path $PSScriptRoot "UnreadMessages.html"
+$outFile = Join-Path -Path $PSScriptRoot -ChildPath "UnreadMessages.html"
 
 if (Test-Path -Path $outFile) {
     Remove-Item -Path $outFile -Force
 }
 
-$global:Html -join "`n" | Set-Content -Path $outFile -Encoding UTF8
+$Html -join "`n" | Set-Content -Path $outFile -Encoding UTF8
 
 Start-Process -FilePath $outFile

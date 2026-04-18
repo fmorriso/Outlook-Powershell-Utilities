@@ -15,10 +15,10 @@ shifted from full-functionality Outlook Desktop to the Outlook "app" and Outlook
    number of days old.
 
 1. remove old emails from the Outlook Sent folder based on a configurable
-number of days old.
+   number of days old.
 
 1. remove old emails from the Filed folder and subfolders based on a configurable
-number of days old.
+   number of days old.
 
 ## Developer Notes
 
@@ -58,6 +58,7 @@ Reasons for the above structure are:
 
 | Date       | Description                                          |
 | :--------- | :--------------------------------------------------- |
+| 2026-04-18 | remove use of $global                                |
 | 2026-04-16 | Add remove old Deleted, Filed and Sent items scripts |
 | 2026-04-15 | Add remove old InBox items script                    |
 | 2026-04-14 | Initial creation                                     |
