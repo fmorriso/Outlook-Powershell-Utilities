@@ -4,7 +4,7 @@ Remove old Outlook InBox items
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
 $startDateTime = Get-Date
-Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
+Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
 # -----------------------------
 # CONFIGURATION
@@ -46,7 +46,7 @@ if (-not $folder) {
 }
 
 $folderId = $folder.id
-Write-Verbose "Resolved folder '$folderName' → ID: $folderId"
+Write-Verbose -Message "Resolved folder '$folderName' → ID: $folderId"
 
 # -----------------------------
 # Build cutoff timestamp (Graph-safe)

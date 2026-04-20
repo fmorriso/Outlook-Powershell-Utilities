@@ -4,7 +4,7 @@ Delete old Outlook Deleted Items
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
 $startDateTime = Get-Date
-Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
+Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
 # -----------------------------
 # CONFIGURATION
@@ -34,7 +34,7 @@ Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -No
 # -----------------------------
 # Resolve folder by display name
 # -----------------------------
-Write-Verbose "Resolving folder: $folderName"
+Write-Verbose -Message "Resolving folder: $folderName"
 
 $folderList = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=200"
 $folder = $folderList.value | Where-Object { $_.displayName -eq $folderName }

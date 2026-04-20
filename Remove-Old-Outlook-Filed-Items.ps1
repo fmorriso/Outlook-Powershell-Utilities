@@ -4,7 +4,7 @@ Remove old Outlook Filed items
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
 $startDateTime = Get-Date
-Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
+Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
 # -----------------------------
 # CONFIGURATION

@@ -58,6 +58,7 @@ Reasons for the above structure are:
 
 | Date       | Description                                          |
 | :--------- | :--------------------------------------------------- |
+| 2026-04-20 | add explicit -Message paramater                      |
 | 2026-04-18 | remove use of $global                                |
 | 2026-04-16 | Add remove old Deleted, Filed and Sent items scripts |
 | 2026-04-15 | Add remove old InBox items script                    |
