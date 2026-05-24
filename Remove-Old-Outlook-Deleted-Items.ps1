@@ -1,122 +1,76 @@
-﻿<#
-Delete old Outlook Deleted Items
-#>
-Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
-
+﻿Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
-# -----------------------------
-# CONFIGURATION
-# -----------------------------
-$folderName = "Deleted Items"   # <--- CHANGE THIS to any folder name
-$daysOld    = 30                # <--- CHANGE THIS to desired age cutoff
-$batchSize  = 100               # number of messages to fetch per loop
-# -----------------------------
+# Requires Microsoft.Graph module
+# Install-Module Microsoft.Graph -Scope CurrentUser
+# Import-Module Microsoft.Graph <--- exceeds 4096 limit - do not use
+$vpref = $VerbosePreference
+$VerbosePreference = 'SilentlyContinue'
 
-# Ensure required modules
-[string[]] $modules = @('Microsoft.Graph', 'Microsoft.Graph.Mail')
-$modules | ForEach-Object {
-    if (-not (Get-InstalledModule -Name $_ -ErrorAction SilentlyContinue)) {
-        Install-Module -Name $_ -Scope CurrentUser -Force -Verbose
-    }
+[string] $moduleName = 'Microsoft.Graph.Mail'
+if (-not (Get-InstalledModule -Name $moduleName -ErrorAction SilentlyContinue)) {
+    Install-Module -Name $moduleName -Scope CurrentUser -Force
+}
+Import-Module -Name $moduleName
+
+
+# temporarily change verbose preference so we can see what's happening
+if ($VerbosePreference -ne 'Continue') {
+    $VerbosePreference = 'Continue'
 }
 
-# Temporarily enable verbose
-$vpref = $VerbosePreference
-if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
+Disconnect-MgGraph -ErrorAction SilentlyContinue
 
-Disconnect-MgGraph -ErrorAction SilentlyContinue -Verbose
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -NoWelcome
 
-# Connect to Graph
-Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -NoWelcome -Verbose
-
-# -----------------------------
-# Resolve folder by display name
-# -----------------------------
-Write-Verbose -Message "Resolving folder: $folderName"
-
-$folderList = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=200"
-$folder = $folderList.value | Where-Object { $_.displayName -eq $folderName }
-
-if (-not $folder) {
-    Write-Error -Message "Folder '$folderName' not found."
-    $VerbosePreference = $vpref
+# Get Deleted Items folder info
+$folderUri = Invoke-MgGraphRequest -Method GET -Uri 'https://graph.microsoft.com/v1.0/me/mailFolders/DeletedItems'
+if (-not $folderUri) {
+    Write-Error "Deleted Items folder not found."
     return
 }
+$folderUriId = $folderUri.id
+Write-Verbose -Message "Deleted Items folder ID: $folderUriId"
 
-$folderId = $folder.id
-Write-Verbose -Message "Resolved folder '$folderName' → ID: $folderId"
+# Calculate cutoff date
+# Number of days old before hard delete
+$daysOld = 30
+$cutoffDate = (Get-Date).AddDays(-$daysOld).ToString("o") # ISO 8601 format
+Write-Verbose -Message "cut off date: $cutOffDate"
 
-# -----------------------------
-# Build cutoff timestamp (Graph-safe)
-# -----------------------------
-$cutOffIso = (Get-Date).AddDays(-$daysOld).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-Write-Verbose "Cutoff date (UTC): $cutOffIso"
+# Batch size for deletions
+$batchSize = 50
 
-# -----------------------------
-# Build base query
-# -----------------------------
-$baseMessagesUri =
-    "https://graph.microsoft.com/v1.0/me/mailFolders/$folderId/messages?" +
-    "`$filter=receivedDateTime lt $cutOffIso&" +
-    "`$orderby=receivedDateTime asc&" +
-    "`$top=$batchSize"
+# Get all messages in Deleted Items folder (pagination needed if many)
+$messagesUri = "https://graph.microsoft.com/v1.0/me/mailFolders/$folderUriId/messages?`$filter=receivedDateTime lt $cutoffDate&`$top=$batchSize"
 
-[int] $totalDeleted = 0
-
-# -----------------------------
-# MAIN LOOP
-# -----------------------------
+[int] $count = 0
 do {
-    Write-Verbose "Querying up to $batchSize messages older than cutoff..."
-
-    try {
-        $response = Invoke-MgGraphRequest -Method GET -Uri $baseMessagesUri
-    }
-    catch {
-        Write-Warning "GET request failed: $($_.Exception.Message)"
-        break
-    }
-
-    $messages = $response.value
-
-    if (-not $messages -or $messages.Count -eq 0) {
-        Write-Verbose "No more messages found before cutoff."
-        break
-    }
-
-    Write-Verbose "Found $($messages.Count) messages in this batch."
+    $httpGetResponse = Invoke-MgGraphRequest -Method GET -Uri $messagesUri -Verbose
+    $messages = $httpGetResponse.value
 
     foreach ($msg in $messages) {
-        $encodedId = [System.Web.HttpUtility]::UrlEncode($msg.id)
-        $deleteUrl = "https://graph.microsoft.com/v1.0/me/mailFolders/$folderId/messages/$encodedId"
-
-        Write-Verbose "Deleting message id=$($msg.id)..."
-
-        try {
-            Invoke-MgGraphRequest -Method DELETE -Uri $deleteUrl
-            $totalDeleted++
-        }
-        catch {
-            Write-Warning "Failed to delete message id=$($msg.id): $($_.Exception.Message)"
-        }
+        $count++
+        Write-Verbose -Message "Deleting message ID: $($msg.id) - Subject: $($msg.subject)"
+        $httpDeleteResponse = Invoke-MgGraphRequest -Method DELETE -Uri "https://graph.microsoft.com/v1.0/me/messages/$($msg.id)?$deleteType=hardDelete" -OutputType HttpResponseMessage -Verbose
+        Write-Verbose -Message "HTTP Delete StatusCode: $httpDeleteResponse.StatusCode"
+        Write-Verbose -Message "HTTP Delete attempt True/False was $httpDeleteResponse.IsSuccessStatusCode"
     }
 
-} while ($true)
+    $messagesUri = $httpGetResponse.'@odata.nextLink'
+} while ($messagesUri)
 
-Write-Verbose "Deleted $totalDeleted messages older than $cutOffIso from $folderName"
+Write-Verbose -Message "Cleanup of $count messages complete."
 
-# Restore verbose preference
+# restore user's original verbose preference
 $VerbosePreference = $vpref
 
-$endDateTime = Get-Date
-Write-Verbose "Ended at: $($endDateTime.ToString($dateFormat))"
+$endDateTime = Get-Date 
+Write-Verbose -Message "Ended at:  $($endDateTime.ToString($dateFormat))"
+$elapsed = $endDateTime - $startDateTime  # This creates a TimeSpan object
 
-$elapsed = $endDateTime - $startDateTime
-$elapsedTimeDisplay =
-    "Elapsed time: $($elapsed.Hours.ToString('D2')):" +
-    "$($elapsed.Minutes.ToString('D2')):" +
-    "$($elapsed.Seconds.ToString('D2'))"
-
-Write-Verbose $elapsedTimeDisplay
+# Display the TimeSpan
+$elapsedTimeDisplay = "Elapsed time: $($elapsed.Hours.ToString("D2")):$($elapsed.Minutes.ToString("D2")):$($elapsed.Seconds.ToString("D2"))"
+Write-Verbose -Message $elapsedTimeDisplay

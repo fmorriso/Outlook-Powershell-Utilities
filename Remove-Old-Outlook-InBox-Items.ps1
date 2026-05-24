@@ -10,7 +10,7 @@ Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 # CONFIGURATION
 # -----------------------------
 $folderName = "Inbox"           # <--- CHANGE THIS to any folder name
-$daysOld    = 60                # <--- CHANGE THIS to desired age cutoff
+$daysOld    = 90                # <--- CHANGE THIS to desired age cutoff
 $batchSize  = 100               # number of messages to fetch per loop
 # -----------------------------
 
@@ -69,7 +69,7 @@ $baseMessagesUri =
 # MAIN LOOP
 # -----------------------------
 do {
-    Write-Verbose "Querying up to $batchSize messages older than cutoff..."
+    Write-Verbose "Querying up to $batchSize messages older than cutoff of $cutOffIso ..."
 
     try {
         $response = Invoke-MgGraphRequest -Method GET -Uri $baseMessagesUri

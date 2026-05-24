@@ -51,13 +51,14 @@ Reasons for the above structure are:
 
 | Tool       | Version |
 | :--------- | ------: |
-| Powershell |   7.6.0 |
-| VSCode     | 1.116.0 |
+| Powershell |   7.6.1 |
+| VSCode     | 1.121.0 |
 
 # Change History
 
 | Date       | Description                                          |
 | :--------- | :--------------------------------------------------- |
+| 2026-05-24 | Code clean up                                        |
 | 2026-04-20 | add explicit -Message paramater                      |
 | 2026-04-18 | remove use of $global                                |
 | 2026-04-16 | Add remove old Deleted, Filed and Sent items scripts |

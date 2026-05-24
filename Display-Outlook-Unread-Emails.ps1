@@ -1,5 +1,6 @@
 ﻿<#
 List unread Outlook messages (recursively) and generate Outlook.com links
+Includes: Mark All As Read (PowerShell-side REST PATCH)
 #>
 
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
@@ -10,7 +11,7 @@ Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
-$rootFolderNames = @("Filed", "Inbox", "Junk Email")
+$rootFolderNames = @('Filed', 'Inbox', 'Junk Email')
 $batchSize      = 100
 # -----------------------------
 
@@ -101,26 +102,30 @@ if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
 
 # Connect to Graph
 Disconnect-MgGraph -ErrorAction SilentlyContinue -Verbose
-Connect-MgGraph -Scopes 'Mail.Read','Mail.Read.Shared','User.Read' -NoWelcome -Verbose
+Connect-MgGraph -Scopes 'Mail.Read','Mail.Read.Shared','Mail.ReadWrite','User.Read' -NoWelcome -Verbose
 
 # Force authentication to complete
 Get-MgContext | Out-Null
 
 # -----------------------------
-# PAGE THROUGH ALL ROOT FOLDERS
+# FUNCTION: Mark messages as read
 # -----------------------------
-Write-Verbose -Message "Resolving ALL root folders (paged)..."
+function Set-MessagesRead {
+    param(
+        [string[]]$MessageIds
+    )
 
-$folderList = @()
-$next = "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=999"
-
-while ($next) {
-    $resp = Invoke-MgGraphRequest -Method GET -Uri $next
-    $folderList += $resp.value
-    $next = $resp.'@odata.nextLink'
+    foreach ($id in $MessageIds) {
+        $uri = "https://graph.microsoft.com/v1.0/me/messages/$id"
+        try {
+            Invoke-MgGraphRequest -Method PATCH -Uri $uri -Body @{ isRead = $true } | Out-Null
+            Write-Verbose "Marked message $id as read"
+        }
+        catch {
+            Write-Warning "Failed to mark $id as read: $($_.Exception.Message)"
+        }
+    }
 }
-
-Write-Verbose -Message "Total root-level folders retrieved: $($folderList.Count)"
 
 # -----------------------------
 # FUNCTION: Show unread messages
@@ -155,6 +160,9 @@ function Show-UnreadMessagesFromFolder {
         return
     }
 
+    # Collect IDs for Mark All As Read
+    $messageIds = @()
+
     # Console output
     Write-Host ""
     Write-Host "📁 Folder: $FolderDisplayName" -ForegroundColor Cyan
@@ -165,11 +173,19 @@ function Show-UnreadMessagesFromFolder {
     $Html.Value += "<button class='collapsible'>$safeFolder</button>"
     $Html.Value += "<div class='content'>"
 
+    # Mark All As Read button
+    $Html.Value += "<button onclick=""location.href='markread://$FolderId'"" 
+                    style='margin:0.5rem 0; padding:0.4rem; background:#d9534f; color:white; border:none; border-radius:4px;'>
+                    Mark All As Read
+                    </button>"
+
     # Table start
     $Html.Value += "<table>"
     $Html.Value += "<tr><th>Received</th><th>From</th><th>Subject</th><th>Open</th></tr>"
 
     foreach ($msg in $messages) {
+
+        $messageIds += $msg.id
 
         # Convert Graph datetime to local timezone
         $receivedRaw   = [datetimeoffset]$msg.receivedDateTime
@@ -240,74 +256,67 @@ function Get-ChildFoldersPaged {
 }
 
 # -----------------------------
-# FUNCTION: Recursively walk folders
+# HANDLE markread:// PROTOCOL
 # -----------------------------
-function Get-FolderRecursively {
-    param(
-        [string]$FolderId,
-        [string]$FolderDisplayName,
-        [string]$BreadcrumbPath,
-        [ref]$Html
-    )
+if ($args.Count -gt 0 -and $args[0].StartsWith("markread://")) {
 
-    Show-UnreadMessagesFromFolder -FolderId $FolderId -FolderDisplayName $BreadcrumbPath -Html $Html
+    $folderId = $args[0].Substring("markread://".Length)
 
-    $children = Get-ChildFoldersPaged -ParentFolderId $FolderId
+    Write-Host "Re-querying unread messages for folder: $folderId"
 
-    foreach ($child in $children) {
-        $childPath = "$BreadcrumbPath → $($child.displayName)"
+    $uri = "https://graph.microsoft.com/v1.0/me/mailFolders/$folderId/messages?`$filter=isRead eq false&`$select=id&`$top=999"
+    $resp = Invoke-MgGraphRequest -Method GET -Uri $uri
 
-        Get-FolderRecursively `
-            -FolderId $child.id `
-            -FolderDisplayName $child.displayName `
-            -BreadcrumbPath $childPath `
-            -Html $Html
+    $ids = $resp.value.id
+    if ($ids.Count -gt 0) {
+        Write-Host "Marking $($ids.Count) messages as read..."
+        Set-MessagesRead -MessageIds $ids
+    } else {
+        Write-Host "No unread messages found."
     }
+
+    exit
 }
 
 # -----------------------------
-# START RECURSION FOR ALL ROOTS
+# PAGE THROUGH ALL ROOT FOLDERS
+# -----------------------------
+Write-Verbose -Message "Resolving ALL root folders (paged)..."
+
+$folderList = @()
+$next = "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=999"
+
+while ($next) {
+    $resp = Invoke-MgGraphRequest -Method GET -Uri $next
+    $folderList += $resp.value
+    $next = $resp.'@odata.nextLink'
+}
+
+Write-Verbose -Message "Total root-level folders retrieved: $($folderList.Count)"
+
+# -----------------------------
+# PROCESS ROOT + CHILD FOLDERS
 # -----------------------------
 foreach ($rootName in $rootFolderNames) {
+    $root = $folderList | Where-Object { $_.displayName -eq $rootName }
+    if (-not $root) { continue }
 
-    $rootFolder = $folderList | Where-Object { $_.displayName -eq $rootName }
+    Show-UnreadMessagesFromFolder -FolderId $root.id -FolderDisplayName $root.displayName -Html ([ref]$Html)
 
-    if (-not $rootFolder) {
-        Write-Warning -Message "Folder '$rootName' not found — skipping."
-        continue
+    $children = Get-ChildFoldersPaged -ParentFolderId $root.id
+    foreach ($child in $children) {
+        Show-UnreadMessagesFromFolder -FolderId $child.id -FolderDisplayName $child.displayName -Html ([ref]$Html)
     }
-
-    Write-Verbose -Message "Resolved '$rootName' → ID: $($rootFolder.id)"
-
-    Get-FolderRecursively `
-        -FolderId $rootFolder.id `
-        -FolderDisplayName $rootFolder.displayName `
-        -BreadcrumbPath $rootFolder.displayName `
-        -Html ([ref]$Html)
 }
 
-Write-Verbose -Message "Unread message scan complete."
-
-# Restore verbose preference
-$VerbosePreference = $vpref
-
-$endDateTime = Get-Date
-Write-Verbose -Message "Ended at: $($endDateTime.ToString($dateFormat))"
-
-$elapsed = $endDateTime - $startDateTime
-Write-Verbose -Message ("Elapsed time: {0:hh\:mm\:ss}" -f $elapsed)
-
 # -----------------------------
-# WRITE HTML FILE
+# WRITE HTML OUTPUT
 # -----------------------------
 $Html += "</body></html>"
 
-$outFile = Join-Path -Path $PSScriptRoot -ChildPath "UnreadMessages.html"
+$outFile = Join-Path (Get-Location) "UnreadMessages.html"
+Set-Content -Path $outFile -Value $Html -Encoding UTF8
 
-if (Test-Path -Path $outFile) {
-    Remove-Item -Path $outFile -Force
-}
-
-$Html -join "`n" | Set-Content -Path $outFile -Encoding UTF8
-
-Start-Process -FilePath $outFile
+Write-Host ""
+Write-Host "Output written to: $outFile" -ForegroundColor Green
+Start-Process $outFile

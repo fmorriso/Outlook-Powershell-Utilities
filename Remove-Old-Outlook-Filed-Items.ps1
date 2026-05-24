@@ -1,147 +1,112 @@
-﻿<#
-Remove old Outlook Filed items
-#>
-Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
+﻿function Get-MailFolderRecursively {param ([string]$parentFolderId)
 
+    $prevSetting = $VerbosePreference
+    $VerbosePreference = 'SilentlyContinue'
+
+    $folders = @()
+    $uri = "https://graph.microsoft.com/v1.0/me/mailFolders/$parentFolderId/childFolders"
+    do {
+        $response = Invoke-MgGraphRequest -Method GET -Uri $uri
+        $folders += $response.value
+        $uri = $response.'@odata.nextLink'
+    } while ($uri)
+
+    foreach ($folder in $folders) {
+        $folders += Get-MailFolderRecursively -parentFolderId $folder.id
+    }
+
+    $VerbosePreference = $prevSetting
+    return $folders
+}
+
+<#
+ START OF MAIN PROGRAM 
+#>
+
+Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
-# -----------------------------
-# CONFIGURATION
-# -----------------------------
-$rootFolderName = "Filed"       # <--- Start here
-$yearsOld = 1.5                 # 1.5 is the number of years old, accounting for (most) leap years.
-$daysOld = [int](((365*3 + 366) / 4.0) * $yearsOld) 
-$batchSize      = 100
-# -----------------------------
-
-# Ensure required modules
-[string[]] $modules = @('Microsoft.Graph', 'Microsoft.Graph.Mail')
-$modules | ForEach-Object {
-    if (-not (Get-InstalledModule -Name $_ -ErrorAction SilentlyContinue)) {
-        Install-Module -Name $_ -Scope CurrentUser -Force -Verbose
-    }
+# Requires Microsoft.Graph module
+# Install-Module Microsoft.Graph -Scope CurrentUser
+# Import-Module Microsoft.Graph <--- exceeds 4096 limit - do not use
+$vpref = $VerbosePreference
+# temporarily change verbose preference so we can see what's happening
+if ($VerbosePreference -ne 'Continue') {
+    $VerbosePreference = 'Continue'
 }
 
-# Temporarily enable verbose
-$vpref = $VerbosePreference
-if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
+[string] $moduleName = 'Microsoft.Graph.Mail'
+if (-not (Get-InstalledModule -Name $moduleName -ErrorAction SilentlyContinue)) {
+    Install-Module -Name $moduleName -Scope CurrentUser -Force
+}
+Import-Module -Name $moduleName
 
-Disconnect-MgGraph -ErrorAction SilentlyContinue -Verbose
 
-Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -NoWelcome -Verbose
 
-# -----------------------------
-# Resolve root folder
-# -----------------------------
-Write-Verbose "Resolving root folder: $rootFolderName"
+Disconnect-MgGraph -ErrorAction SilentlyContinue
 
-$folderList = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=200"
-$rootFolder = $folderList.value | Where-Object { $_.displayName -eq $rootFolderName }
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes "Mail.ReadWrite","Mail.ReadWrite.Shared","User.Read" -NoWelcome
 
-if (-not $rootFolder) {
-    Write-Error "Folder '$rootFolderName' not found."
-    $VerbosePreference = $vpref
+# Find "Filed" folder
+$folder = Invoke-MgGraphRequest -Method GET -Uri 'https://graph.microsoft.com/v1.0/me/mailFolders' | 
+    Select-Object -ExpandProperty value | 
+    Where-Object { $_.displayName -eq "Filed" }
+
+if (-not $folder) {
+    Write-Error "Filed folder not found."
     return
 }
 
-Write-Verbose "Resolved '$rootFolderName' → ID: $($rootFolder.id)"
+Write-Verbose -Message 'Found Filed folder'
 
-# -----------------------------
-# Build cutoff timestamp
-# -----------------------------
-$cutOffIso = (Get-Date).AddDays(-$daysOld).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-Write-Verbose "Cutoff date (UTC): $cutOffIso"
+# Calculate cutoff date
+# Number of days old before hard delete
+$daysOld = 270
+$cutoffDate = (Get-Date).AddDays(-$daysOld).ToString("o") # ISO 8601 format
+Write-Verbose -Message "cut off date: $cutOffDate"
 
-[int]$globalDeleted = 0
+# Batch size for deletions
+$batchSize = 50
 
-# -----------------------------
-# FUNCTION: Delete old messages in a folder
-# -----------------------------
-function Remove-OldMessagesFromFolder {
-    param(
-        [string]$FolderId,
-        [string]$FolderDisplayName
-    )
+# Get all subfolders recursively
+$allFolders = @($folder)
+$allFolders += Get-MailFolderRecursively -parentFolderId $folder.id
+$folderCount = $allFolders.Count
+Write-Verbose -Message "all folders contains $folderCount entries"
 
-    Write-Verbose "Processing folder: $FolderDisplayName (ID: $FolderId)"
-
-    $baseMessagesUri =
-        "https://graph.microsoft.com/v1.0/me/mailFolders/$FolderId/messages?" +
-        "`$filter=receivedDateTime lt $cutOffIso&" +
-        "`$orderby=receivedDateTime asc&" +
-        "`$top=$batchSize"
+[int]$totalDeleted = 0
+foreach ($folder in $allFolders) {
+    Write-Verbose -Message "Processing folder: $($folder.displayName)"
+    $messagesUri = "https://graph.microsoft.com/v1.0/me/mailFolders/$($folder.id)/messages?`$filter=receivedDateTime lt $cutoffDate&`$top=$batchSize"
 
     do {
-        try {
-            $response = Invoke-MgGraphRequest -Method GET -Uri $baseMessagesUri
-        }
-        catch {
-            Write-Warning "GET failed in folder '$FolderDisplayName': $($_.Exception.Message)"
-            break
-        }
-
+        $response = Invoke-MgGraphRequest -Method GET -Uri $messagesUri
         $messages = $response.value
-        if (-not $messages -or $messages.Count -eq 0) { break }
-
-        Write-Verbose "Found $($messages.Count) messages in '$FolderDisplayName'"
 
         foreach ($msg in $messages) {
-            $encodedId = [System.Web.HttpUtility]::UrlEncode($msg.id)
-            $deleteUrl = "https://graph.microsoft.com/v1.0/me/mailFolders/$FolderId/messages/$encodedId"
-
-            try {
-                Invoke-MgGraphRequest -Method DELETE -Uri $deleteUrl
-                $globalDeleted++
-            }
-            catch {
-                Write-Warning "Failed to delete message $($msg.id) in '$FolderDisplayName': $($_.Exception.Message)"
+            Write-Verbose "Deleting message ID: $($msg.id) - Subject: $($msg.subject)"
+            $deleteUri = "https://graph.microsoft.com/v1.0/me/messages/$($msg.id)?$deleteType=hardDelete"
+            $deleteResponse = Invoke-MgGraphRequest -Method DELETE -Uri $deleteUri -OutputType HttpResponseMessage
+            if ($deleteResponse.IsSuccessStatusCode) {
+                $totalDeleted++
             }
         }
 
-    } while ($true)
+        $messagesUri = $response.'@odata.nextLink'
+    } while ($messagesUri)
 }
 
-# -----------------------------
-# FUNCTION: Recursively walk folders
-# -----------------------------
-function Process-FolderRecursively {
-    param(
-        [string]$FolderId,
-        [string]$FolderDisplayName
-    )
+Write-Verbose -Message "Cleanup of $totalDeleted messages complete."
 
-    # 1. Clean this folder
-    Remove-OldMessagesFromFolder -FolderId $FolderId -FolderDisplayName $FolderDisplayName
-
-    # 2. Get child folders
-    $childUri = "https://graph.microsoft.com/v1.0/me/mailFolders/$FolderId/childFolders?`$top=200"
-
-    try {
-        $childResponse = Invoke-MgGraphRequest -Method GET -Uri $childUri
-    }
-    catch {
-        Write-Warning "Failed to get child folders for '$FolderDisplayName': $($_.Exception.Message)"
-        return
-    }
-
-    foreach ($child in $childResponse.value) {
-        Process-FolderRecursively -FolderId $child.id -FolderDisplayName $child.displayName
-    }
-}
-
-# -----------------------------
-# START RECURSION
-# -----------------------------
-Process-FolderRecursively -FolderId $rootFolder.id -FolderDisplayName $rootFolder.displayName
-
-Write-Verbose "Cleanup complete. Deleted $globalDeleted messages."
-
-# Restore verbose preference
+# restore user's original verbose preference
 $VerbosePreference = $vpref
 
-$endDateTime = Get-Date
-Write-Verbose "Ended at: $($endDateTime.ToString($dateFormat))"
+$endDateTime = Get-Date 
+Write-Verbose -Message "Ended at:  $($endDateTime.ToString($dateFormat))"
+$elapsed = $endDateTime - $startDateTime  # This creates a TimeSpan object
 
-$elapsed = $endDateTime - $startDateTime
-Write-Verbose ("Elapsed time: {0:hh\:mm\:ss}" -f $elapsed)
+# Display the TimeSpan
+$elapsedTimeDisplay = "Elapsed time: $($elapsed.Hours.ToString("D2")):$($elapsed.Minutes.ToString("D2")):$($elapsed.Seconds.ToString("D2"))"
+Write-Verbose -Message $elapsedTimeDisplay

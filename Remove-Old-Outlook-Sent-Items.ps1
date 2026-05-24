@@ -10,7 +10,7 @@ Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
 # CONFIGURATION
 # -----------------------------
 $folderName = "Sent Items"      # <--- CHANGE THIS to any folder name
-$daysOld    = 30                # <--- CHANGE THIS to desired age cutoff
+$daysOld    = 270                # <--- CHANGE THIS to desired age cutoff
 $batchSize  = 100               # number of messages to fetch per loop
 # -----------------------------
 
