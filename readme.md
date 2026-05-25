@@ -58,6 +58,7 @@ Reasons for the above structure are:
 
 | Date       | Description                                          |
 | :--------- | :--------------------------------------------------- |
+| 2026-05-25 | Added Install NPM Packages script                    |
 | 2026-05-24 | Code clean up                                        |
 | 2026-04-20 | add explicit -Message paramater                      |
 | 2026-04-18 | remove use of $global                                |
