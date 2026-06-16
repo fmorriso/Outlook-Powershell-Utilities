@@ -1,4 +1,9 @@
-﻿Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
+﻿<#
+Remove old Deleted Items from Outlook using Microsoft Graph API
+and a configurable number of days old as the cutoff. 
+This script will hard delete items older than the cutoff date.
+#>
+Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
