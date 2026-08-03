@@ -1,6 +1,8 @@
 ﻿<#
 Remove old Outlook Sent Items
 #>
+
+$PSVersionTable.DotNetVersion = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
 Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on $($PSVersionTable.Platform) with .NET $($PSVersionTable.DotNetVersion)"
 
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue

@@ -5,6 +5,7 @@ This script will hard delete items older than the cutoff date.
 #>
 Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
+$PSVersionTable.DotNetVersion = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
 Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on $($PSVersionTable.Platform) with .NET $($PSVersionTable.DotNetVersion)"
 
 $startDateTime = Get-Date
