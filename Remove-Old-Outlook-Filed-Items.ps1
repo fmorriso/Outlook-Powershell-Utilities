@@ -24,6 +24,9 @@
 #>
 
 Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
+
+Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on $($PSVersionTable.Platform) with .NET $($PSVersionTable.DotNetVersion)"
+
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 

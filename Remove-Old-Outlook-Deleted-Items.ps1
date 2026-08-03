@@ -4,6 +4,9 @@ and a configurable number of days old as the cutoff.
 This script will hard delete items older than the cutoff date.
 #>
 Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
+
+Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on $($PSVersionTable.Platform) with .NET $($PSVersionTable.DotNetVersion)"
+
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
@@ -28,7 +31,7 @@ if ($VerbosePreference -ne 'Continue') {
 Disconnect-MgGraph -ErrorAction SilentlyContinue
 
 # Connect to Microsoft Graph
-Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -NoWelcome
+Connect-MgGraph -Scopes 'Mail.ReadWrite', 'Mail.ReadWrite.Shared', 'User.Read' -NoWelcome
 
 # Get Deleted Items folder info
 $folderUri = Invoke-MgGraphRequest -Method GET -Uri 'https://graph.microsoft.com/v1.0/me/mailFolders/DeletedItems'
