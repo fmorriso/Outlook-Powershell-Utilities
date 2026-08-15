@@ -10,7 +10,7 @@ Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
-$folderName = "Junk Email"      # <--- CHANGE THIS to any folder name
+$folderName = 'Junk Email'      # <--- CHANGE THIS to any folder name
 $daysOld    = 7                 # <--- CHANGE THIS to desired age cutoff
 $batchSize  = 100               # number of messages to fetch per loop
 # -----------------------------
