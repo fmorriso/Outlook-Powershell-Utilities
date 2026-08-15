@@ -22,6 +22,9 @@
 <#
  START OF MAIN PROGRAM 
 #>
+# Temporarily enable verbose
+$vpref = $VerbosePreference
+if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
 
 Set-Variable -Name 'dateFormat'-Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
@@ -34,19 +37,12 @@ Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 # Requires Microsoft.Graph module
 # Install-Module Microsoft.Graph -Scope CurrentUser
 # Import-Module Microsoft.Graph <--- exceeds 4096 limit - do not use
-$vpref = $VerbosePreference
-# temporarily change verbose preference so we can see what's happening
-if ($VerbosePreference -ne 'Continue') {
-    $VerbosePreference = 'Continue'
-}
 
 [string] $moduleName = 'Microsoft.Graph.Mail'
 if (-not (Get-InstalledModule -Name $moduleName -ErrorAction SilentlyContinue)) {
     Install-Module -Name $moduleName -Scope CurrentUser -Force
 }
 Import-Module -Name $moduleName
-
-
 
 Disconnect-MgGraph -ErrorAction SilentlyContinue
 

@@ -1,6 +1,9 @@
 ﻿<#
 Remove old Outlook Sent Items
 #>
+# Temporarily enable verbose
+$vpref = $VerbosePreference
+if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
 
 $PSVersionTable.DotNetVersion = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
 Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on $($PSVersionTable.Platform) with $($PSVersionTable.DotNetVersion)"
@@ -25,10 +28,6 @@ $modules | ForEach-Object {
         Install-Module -Name $_ -Scope CurrentUser -Force -Verbose
     }
 }
-
-# Temporarily enable verbose
-$vpref = $VerbosePreference
-if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
 
 Disconnect-MgGraph -ErrorAction SilentlyContinue -Verbose
 
