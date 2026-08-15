@@ -1,6 +1,10 @@
 ﻿<#
 Remove old Outlook InBox items
 #>
+# Temporarily enable verbose
+$vpref = $VerbosePreference
+if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
+
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
 $PSVersionTable.DotNetVersion = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
@@ -8,6 +12,8 @@ Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on
 
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
+
+Start-Sleep -Seconds 5
 
 # -----------------------------
 # CONFIGURATION
@@ -25,14 +31,12 @@ $modules | ForEach-Object {
     }
 }
 
-# Temporarily enable verbose
-$vpref = $VerbosePreference
-if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
-
 Disconnect-MgGraph -ErrorAction SilentlyContinue -Verbose
 
 # Connect to Graph
 Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -NoWelcome -Verbose
+
+Start-Sleep -Seconds 5
 
 # -----------------------------
 # Resolve folder by display name

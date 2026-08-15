@@ -3,6 +3,11 @@ Remove old Deleted Items from Outlook using Microsoft Graph API
 and a configurable number of days old as the cutoff. 
 This script will hard delete items older than the cutoff date.
 #>
+
+# Temporarily enable verbose
+$vpref = $VerbosePreference
+if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
+
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 
 $PSVersionTable.DotNetVersion = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
@@ -14,15 +19,12 @@ Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 # Requires Microsoft.Graph module
 # Install-Module Microsoft.Graph -Scope CurrentUser
 # Import-Module Microsoft.Graph <--- exceeds 4096 limit - do not use
-$vpref = $VerbosePreference
-$VerbosePreference = 'SilentlyContinue'
 
 [string] $moduleName = 'Microsoft.Graph.Mail'
 if (-not (Get-InstalledModule -Name $moduleName -ErrorAction SilentlyContinue)) {
     Install-Module -Name $moduleName -Scope CurrentUser -Force
 }
 Import-Module -Name $moduleName
-
 
 # temporarily change verbose preference so we can see what's happening
 if ($VerbosePreference -ne 'Continue') {
@@ -42,6 +44,8 @@ if (-not $folderUri) {
 }
 $folderUriId = $folderUri.id
 Write-Verbose -Message "Deleted Items folder ID: $folderUriId"
+
+Start-Sleep -Seconds 5
 
 # Calculate cutoff date
 # Number of days old before hard delete
