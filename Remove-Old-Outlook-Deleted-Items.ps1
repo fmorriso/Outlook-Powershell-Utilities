@@ -16,6 +16,8 @@ Write-Verbose -Message "Using PowerShell version $($PSVersionTable.PSVersion) on
 $startDateTime = Get-Date
 Write-Verbose -Message "Started at: $($startDateTime.ToString($dateFormat))"
 
+Start-Sleep -Seconds 5
+
 # Requires Microsoft.Graph module
 # Install-Module Microsoft.Graph -Scope CurrentUser
 # Import-Module Microsoft.Graph <--- exceeds 4096 limit - do not use

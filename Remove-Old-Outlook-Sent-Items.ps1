@@ -13,6 +13,8 @@ Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction Silent
 $startDateTime = Get-Date
 Write-Verbose "Started at: $($startDateTime.ToString($dateFormat))"
 
+Start-Sleep -Seconds 5
+
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
