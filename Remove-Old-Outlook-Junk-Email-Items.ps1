@@ -31,11 +31,6 @@ $modules | ForEach-Object {
     }
 }
 
-# Temporarily enable verbose
-$vpref = $VerbosePreference
-if ($VerbosePreference -ne 'Continue') {
-     $VerbosePreference = 'Continue' 
-}
 
 Disconnect-MgGraph -ErrorAction SilentlyContinue -Verbose
 
