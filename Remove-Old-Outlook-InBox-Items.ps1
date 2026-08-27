@@ -57,7 +57,7 @@ Write-Verbose -Message "Resolved folder '$folderName' → ID: $folderId"
 # Build cutoff timestamp (Graph-safe)
 # -----------------------------
 $cutOffIso = (Get-Date).AddDays(-$daysOld).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-Write-Verbose "Cutoff date (UTC): $cutOffIso"
+Write-Verbose -Message "Cutoff date (UTC): $cutOffIso"
 
 # -----------------------------
 # Build base query
