@@ -28,11 +28,6 @@ if (-not (Get-InstalledModule -Name $moduleName -ErrorAction SilentlyContinue)) 
 }
 Import-Module -Name $moduleName
 
-# temporarily change verbose preference so we can see what's happening
-if ($VerbosePreference -ne 'Continue') {
-    $VerbosePreference = 'Continue'
-}
-
 Disconnect-MgGraph -ErrorAction SilentlyContinue
 
 # Connect to Microsoft Graph
