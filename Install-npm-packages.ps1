@@ -10,7 +10,7 @@ param(
     [string[]] $cmds = @('webpack')
 )
 $previousVerbosePreference = $VerbosePreference
-$VerbosePreference = 'Continue'
+if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
 # set the date/time display format to be similar to ISO 8601
 Set-Variable -Name 'dateFormat' -Value 'yyyy-MM-dd HH:mm:ss' -ErrorAction SilentlyContinue
 $startDateTime = Get-Date 
