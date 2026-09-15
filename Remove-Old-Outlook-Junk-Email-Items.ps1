@@ -60,6 +60,8 @@ Write-Verbose -Message "Resolved folder '$folderName' → ID: $folderId"
 $cutOffIso = (Get-Date).AddDays(-$daysOld).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 Write-Verbose -Message "Cutoff date (UTC): $cutOffIso"
 
+Start-Sleep -Seconds 5
+
 # -----------------------------
 # Build base query
 # -----------------------------
