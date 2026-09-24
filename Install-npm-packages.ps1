@@ -7,7 +7,7 @@
     MODIFY THE FOLLOWING COMMA-SEPARATED LIST WITH PACKAGE NAMES THAT NEED TO BE UPDATED TO THE LATEST VERSION
 #>
 param(
-    [string[]] $cmds = @('webpack')
+    [string[]] $cmds = @('sass')
 )
 $previousVerbosePreference = $VerbosePreference
 if ($VerbosePreference -ne 'Continue') { $VerbosePreference = 'Continue' }
