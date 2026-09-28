@@ -39,7 +39,7 @@ Connect-MgGraph -Scopes 'Mail.ReadWrite','Mail.ReadWrite.Shared','User.Read' -No
 # -----------------------------
 # Resolve folder by display name
 # -----------------------------
-Write-Verbose "Resolving folder: $folderName"
+Write-Verbose -Message "Resolving folder: $folderName"
 
 $folderList = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/me/mailFolders?`$top=200"
 $folder = $folderList.value | Where-Object { $_.displayName -eq $folderName }
