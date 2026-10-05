@@ -19,7 +19,7 @@ Start-Sleep -Seconds 5
 # CONFIGURATION
 # -----------------------------
 $folderName = 'Junk Email'      # <--- CHANGE THIS to any folder name
-$daysOld    = 7                 # <--- CHANGE THIS to desired age cutoff
+$daysOld    = 8                 # <--- CHANGE THIS to desired age cutoff
 $batchSize  = 100               # number of messages to fetch per loop
 # -----------------------------
 
