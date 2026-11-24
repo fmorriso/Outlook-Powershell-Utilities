@@ -6,10 +6,7 @@ Remove attachments based on whether messages are from me or to me.
 param(
     [Parameter()]
     [ValidateSet('FromMe', 'ToMe', 'CcMe')]
-    [string[]]$Direction = @(
-        'FromMe',
-        'ToMe'
-    ),
+    [string[]]$Direction = @('FromMe'),
 
     [Parameter()]
     [string]$FolderName = 'Inbox',
