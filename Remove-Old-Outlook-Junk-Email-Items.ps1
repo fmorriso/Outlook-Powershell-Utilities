@@ -26,6 +26,7 @@ $batchSize  = 100               # number of messages to fetch per loop
 # Ensure required modules
 [string[]] $modules = @('Microsoft.Graph', 'Microsoft.Graph.Mail')
 $modules | ForEach-Object {
+    # if not already installed, install it now
     if (-not (Get-InstalledModule -Name $_ -ErrorAction SilentlyContinue)) {
         Install-Module -Name $_ -Scope CurrentUser -Force -Verbose
     }
